@@ -179,7 +179,7 @@ EightShapes.ColorForm = function() {
 
     function removeColorFromData(hex, colors) {
         colors = colors.filter(function(color){
-            return color.hex !== hex ? true : false; 
+            return color.hex !== hex ? true : false;
         });
         return colors;
     }
@@ -325,6 +325,7 @@ EightShapes.ColorForm = function() {
         // $(document).on('escg.show-tab-es-tabs__global-panel--analyze', enableFormFields);
         $(".es-color-form__show-background-colors, .es-color-form__hide-background-colors").on("click", toggleBackgroundColorsInput)
         $("input[name='es-color-form__tile-size']").on("change", broadcastTileSizeChange);
+        $("input[name='es-color-form__show-contrast']").on("change", EightShapes.ContrastGrid.addAccessibilityToSwatches);
         $(".es-color-form__view-code-toggle").on("click", broadcastCodeSnippetViewToggle);
     }
 
@@ -339,10 +340,10 @@ EightShapes.ColorForm = function() {
     }
 
     var initialize = function initialize() {
-        $colorForm = $(".es-color-form"); 
-        $foregroundColorsInput = $("#es-color-form__foreground-colors");   
+        $colorForm = $(".es-color-form");
+        $foregroundColorsInput = $("#es-color-form__foreground-colors");
         $backgroundColorsInput = $("#es-color-form__background-colors");
-        loadFormDataFromUrl(); 
+        loadFormDataFromUrl();
         initializeEventHandlers();
         broadcastFormValueChange();
         broadcastTileSizeChange();
@@ -443,7 +444,7 @@ EightShapes.ContrastGrid = function() {
 
         for (var i = 0; i < backgroundColors.length; i++) {
             var bg = backgroundColors[i].hex,
-                bgLabel = typeof backgroundColors[i].label === 'undefined' ? bg : backgroundColors[i].label, 
+                bgLabel = typeof backgroundColors[i].label === 'undefined' ? bg : backgroundColors[i].label,
                 $contentRow = $contentRowTemplate.clone(),
                 $backgroundKeyCell = $contentRow.find(".es-contrast-grid__background-key-cell"),
                 $swatch = $backgroundKeyCell.find('.es-contrast-grid__key-swatch'),
@@ -604,20 +605,47 @@ EightShapes.ContrastGrid = function() {
         });
     }
 
-    function addAccessibilityToSwatches() {
+    function addAccessibilityToSwatches(shown) {
         var $swatches = $(".es-contrast-grid__swatch");
+
+        shown = $.find(".es-color-form__checkbox-group");
+        if (shown) {
+          shown = {
+            "AAA": $(shown).find("#es-color-form__show-contrast--aaa:checked").length,
+            "AA": $(shown).find("#es-color-form__show-contrast--aa:checked").length,
+            "AA18": $(shown).find("#es-color-form__show-contrast--aa18:checked").length,
+            "DNP": $(shown).find("#es-color-form__show-contrast--dnp:checked").length
+          };
+        }
+
         $swatches.each(function(){
             var contrast = parseFloat($(this).find(".es-contrast-grid__contrast-ratio").text()),
                 $pill = $(this).find(".es-contrast-grid__accessibility-label"),
                 pillText = "DNP";
 
+            $(this).show();
             if (contrast >= 7.0) {
                 pillText = "AAA";
+                if (!shown.AAA) {
+                  $(this).hide();
+                }
             } else if (contrast >= 4.5) {
                 pillText = "AA";
+                if (!shown.AA) {
+                  $(this).hide();
+                }
             } else if (contrast >= 3.0) {
                 pillText = "AA18";
+                if (!shown.AA18) {
+                  $(this).hide();
+                }
+            } else {
+              if (!shown.DNP) {
+                $(this).hide();
+              }
             }
+
+
 
             $pill.text(pillText).addClass("es-contrast-grid__accessibility-label--" + pillText.toLowerCase());
         });
@@ -724,7 +752,8 @@ EightShapes.ContrastGrid = function() {
 
 
     var public_vars = {
-        'initialize': initialize
+        'initialize': initialize,
+        'addAccessibilityToSwatches': addAccessibilityToSwatches
     };
 
     return public_vars;
